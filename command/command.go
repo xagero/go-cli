@@ -1,8 +1,8 @@
-package cli
+package command
 
 import (
+	"context"
 	"fmt"
-	"os"
 )
 
 type Callback func() error
@@ -23,17 +23,18 @@ func Construct(name, description string) *Command {
 	return cmd
 }
 
+// GetName return Command name
+func (c *Command) GetName() string {
+	return c.name
+}
+
 // SetCallback set callback function
 func (c *Command) SetCallback(callback Callback) {
 	c.callback = callback
 }
 
 // Run execute callback function
-func (c *Command) Run(args ...string) error {
-	if len(args) == 0 {
-		args = os.Args[1:]
-	}
-
+func (c *Command) Run(context context.Context, args []string) error {
 	if c.callback != nil {
 		return c.callback()
 	}
