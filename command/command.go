@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 )
 
 // Construct return new Command
@@ -16,61 +15,85 @@ func Construct(name, description string) *Command {
 	return cmd
 }
 
-// GetName return Command name
-func (c *Command) GetName() string {
-	return c.name
+// GetName (getter) return Command name
+func (cmd *Command) GetName() string {
+	return cmd.name
+}
+
+// GetDescription (getter) return Command description
+func (cmd *Command) GetDescription() string {
+	return cmd.description
 }
 
 // SetCallback set callback function
-func (c *Command) SetCallback(callback Callback) *Command {
-	c.callback = callback
-	return c
+func (cmd *Command) SetCallback(callback Callback) *Command {
+	cmd.callback = callback
+	return cmd
 }
 
-func (c *Command) SetCallbackBefore(before Callback) *Command {
-	c.callbackBefore = before
-	return c
+func (cmd *Command) SetCallbackBefore(before Callback) *Command {
+	cmd.callbackBefore = before
+	return cmd
 }
 
-func (c *Command) SetCallbackAfter(after Callback) *Command {
-	c.callbackAfter = after
-	return c
+func (cmd *Command) SetCallbackAfter(after Callback) *Command {
+	cmd.callbackAfter = after
+	return cmd
 }
 
 // Run execute callback function
-func (c *Command) Run(context context.Context, args []string) error {
-	if c.callback != nil {
-		return c.callback()
+func (cmd *Command) Run(context context.Context, args []string) error {
+	if cmd.callback != nil {
+		return cmd.callback()
 	}
 
 	return nil
 }
 
-func (c *Command) PrintHelp() {
-	fmt.Println("I am help")
+// PrintHelp print command help
+func (cmd *Command) PrintHelp() {
+	return
 }
 
 // AddArgument add command argument
-func (c *Command) AddArgument(name, inputArgument, description string) *Command {
+func (cmd *Command) AddArgument(name, inputArgument, description string) *Command {
 
 	arg := new(CmdArgument)
 	arg.name = name
+	arg.value = "" // An empty string
+	arg.position = len(cmd.arguments)
 	arg.input = inputArgument
 	arg.description = description
 
-	c.arguments[name] = arg
+	cmd.arguments[name] = arg
 
-	return c
+	return cmd
 }
 
 // AddOption add command option
-func (c *Command) AddOption(name, inputArgument, description string) *Command {
+func (cmd *Command) AddOption(name, inputArgument, description string) *Command {
 	opt := new(CmdOption)
 	opt.name = name
 	opt.input = inputArgument
 	opt.description = description
 
-	c.options[name] = opt
+	cmd.options[name] = opt
 
-	return c
+	return cmd
+}
+
+// GetArgumentValue return argument value
+func (cmd *Command) GetArgumentValue(name string) string {
+	return cmd.arguments[name].value
+}
+
+// SetArgumentValue set argument value
+func (cmd *Command) SetArgumentValue(position int, value string) *Command {
+	for _, item := range cmd.arguments {
+		if position == item.position {
+			item.value = value
+		}
+	}
+
+	return cmd
 }

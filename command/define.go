@@ -27,6 +27,8 @@ type Command struct {
 // CmdArgument command argument, always ordered in console
 type CmdArgument struct {
 	name        string
+	value       string
+	position    int
 	input       string
 	description string
 }
