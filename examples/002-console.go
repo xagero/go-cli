@@ -10,7 +10,7 @@ import (
 
 func main() {
 
-	name := "console"
+	name := "Console"
 	description := "Simple console application"
 	version := "v0.1"
 
@@ -30,7 +30,8 @@ func main() {
 	})
 	console.AddCommand(second)
 
-	console.SetDefaultCommand(first)
+	console.PrintBanner()
+	//console.SetDefaultCommand(first)
 
 	if err := console.Run(context.Background(), os.Args); err != nil {
 		fmt.Printf("Error encountered: %v\n", err)
