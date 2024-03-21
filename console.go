@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/xagero/go-cli/command"
 )
@@ -72,11 +73,9 @@ func (console *Console) Run(context context.Context, args []string) error {
 		if cmd, ok := console.commands[name]; ok {
 
 			a := args[2:]
-			idx := -1
-			for _, value := range a {
-				idx++
-				cmd.SetArgumentValue(idx, value)
-			}
+			console.processArguments(a, cmd)
+			console.processOptions(a, cmd)
+
 			return cmd.Run(context, args)
 		} else {
 
@@ -84,4 +83,42 @@ func (console *Console) Run(context context.Context, args []string) error {
 	}
 
 	return nil
+}
+
+func (console *Console) processArguments(a []string, cmd *command.Command) {
+	idx := -1
+	for _, value := range a {
+
+		// skip option
+		if strings.HasPrefix(value, "-") {
+			continue
+		}
+
+		idx++
+		cmd.SetArgumentValue(idx, value)
+	}
+}
+
+func (console *Console) processOptions(a []string, cmd *command.Command) {
+	for _, value := range a {
+
+		// skip argument
+		if false == strings.HasPrefix(value, "--") {
+			continue
+		}
+
+		if strings.Contains(value, "=") {
+			parts := strings.Split(value, "=")
+
+			key := strings.TrimPrefix(parts[0], "--")
+			value := strings.TrimPrefix(parts[1], `"`)
+
+			cmd.SetOptionExists(key, true)
+			cmd.SetOptionValue(key, value)
+
+		} else {
+			key := strings.TrimPrefix(value, "--")
+			cmd.SetOptionExists(key, true)
+		}
+	}
 }

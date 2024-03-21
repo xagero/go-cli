@@ -15,27 +15,40 @@ type Callback func() error
 
 // Command simple command structure
 type Command struct {
-	name           string
-	description    string
+	// config
+	name        string
+	description string
+
+	// callback fn
 	callback       Callback
 	callbackBefore Callback
 	callbackAfter  Callback
-	arguments      map[string]*CmdArgument
-	options        map[string]*CmdOption
+
+	// cli parameters
+	arguments map[string]*CmdArgument
+	options   map[string]*CmdOption
 }
 
 // CmdArgument command argument, always ordered in console
 type CmdArgument struct {
+	// config
 	name        string
-	value       string
 	position    int
 	input       string
 	description string
+
+	// cli input
+	value string
 }
 
 // CmdOption command option, not ordered in console
 type CmdOption struct {
+	// config
 	name        string
 	input       string
 	description string
+
+	// cli input
+	exists bool
+	value  string
 }
