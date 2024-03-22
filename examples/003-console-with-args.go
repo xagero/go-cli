@@ -12,7 +12,7 @@ import (
 func main() {
 
 	// Command with args
-	cmd := command.Construct("app:cmd", "Example command with args")
+	cmd := command.Construct("app:cmd", "Example command")
 	cmd.AddArgument("arg1", command.ArgumentRequired, "First argument (*required)")
 	cmd.AddArgument("arg2", command.ArgumentOptional, "Second argument (optional)")
 	cmd.SetCallback(func() error {
@@ -32,7 +32,6 @@ func main() {
 	version := "v0.1"
 
 	console := cli.Construct(name, description, version)
-	console.PrintBanner()
 	console.AddCommand(cmd)
 
 	// Run console

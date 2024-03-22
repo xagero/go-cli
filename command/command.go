@@ -3,6 +3,10 @@ package command
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/xagero/go-helper/helper"
 )
 
 // Construct return new Command
@@ -56,14 +60,80 @@ func (cmd *Command) Run(context context.Context, args []string) error {
 	return nil
 }
 
+// EnableCommonOptions enable common options
+func (cmd *Command) EnableCommonOptions() {
+	// @todo code me
+}
+
+// DisableCommonOptions disable common options
+func (cmd *Command) DisableCommonOptions() {
+	// @todo code me
+}
+
 // PrintHelp print command help
 func (cmd *Command) PrintHelp() {
-	fmt.Println("I am command help")
-	return
+
+	fmt.Println("Description:")
+	fmt.Println(strings.Repeat(" ", 2) + cmd.description)
+
+	fmt.Println("\nUsage:")
+	usage := cmd.name
+	if len(cmd.options) > 0 {
+		usage += " [options]"
+	}
+	fmt.Println(strings.Repeat(" ", 2) + usage)
+
+	if len(cmd.arguments) > 0 {
+		cmd.printHelpArguments()
+	}
+	if len(cmd.options) > 0 {
+		cmd.printHelpOptions()
+	}
+
+}
+
+func (cmd *Command) printHelpOptions() {
+	fmt.Println("\nOptions:")
+
+	var n, s, d string
+
+	for _, option := range cmd.options {
+
+		n = option.name
+		d = option.description
+		s = option.short
+
+		switch option.Input() {
+		case OptionValueNone:
+			if helper.IsBlank(s) {
+				fmt.Printf("\t--%s \t- %s\n", n, d)
+			} else {
+				fmt.Printf("\t--%s, -%s \t- %s\n", n, s, d)
+			}
+		case OptionValueOptional:
+			fmt.Printf("\t--%s \t- %s\n", n, d)
+		case OptionValueRequire:
+			fmt.Printf("\t--%s \t- %s\n", n, d)
+		}
+	}
+}
+
+func (cmd *Command) printHelpArguments() {
+	fmt.Println("\nArguments:")
+	for _, argument := range cmd.arguments {
+
+		var required string
+		if argument.input == ArgumentRequired {
+			required = "(*required)"
+		} else if argument.input == ArgumentOptional {
+			required = "(optional)"
+		}
+		fmt.Printf("\t%s - %s %s\n", argument.name, argument.description, required)
+	}
 }
 
 // AddArgument add command argument
-func (cmd *Command) AddArgument(name, input, description string) *Command {
+func (cmd *Command) AddArgument(name, input, description string) *CmdArgument {
 
 	arg := new(CmdArgument)
 	arg.name = name
@@ -74,11 +144,11 @@ func (cmd *Command) AddArgument(name, input, description string) *Command {
 
 	cmd.arguments[name] = arg
 
-	return cmd
+	return arg
 }
 
 // AddOption add command option
-func (cmd *Command) AddOption(name, input, description string) *Command {
+func (cmd *Command) AddOption(name, input, description string) *CmdOption {
 	opt := new(CmdOption)
 	opt.name = name
 	opt.input = input
@@ -89,7 +159,7 @@ func (cmd *Command) AddOption(name, input, description string) *Command {
 
 	cmd.options[name] = opt
 
-	return cmd
+	return opt
 }
 
 // GetArgumentValue return argument value
@@ -139,6 +209,10 @@ func (opt CmdOption) Value() string {
 	return opt.value
 }
 
+func (opt CmdOption) Short() string {
+	return opt.short
+}
+
 func (cmd *Command) ListOptions() map[string]*CmdOption {
 	return cmd.options
 }
@@ -148,9 +222,20 @@ func (cmd *Command) SetOptionExists(key string, b bool) {
 	if opt, ok := cmd.options[key]; ok {
 		opt.exists = b
 	} else {
-		// @todo fallback OptionNotExistsFallback
-		panic("Option " + key + " not exist")
+		// @todo fallback InvalidOptionFallback
+		panic("Option [" + key + "] not exist")
 	}
+}
+
+func (cmd *Command) SetOptionExistsByShort(short string, b bool) {
+	for _, option := range cmd.options {
+		if option.short == short {
+			option.exists = b
+			return
+		}
+	}
+
+	panic("Short option [" + short + "] not exist")
 }
 
 // SetOptionValue set option value if option exists in console
@@ -160,7 +245,55 @@ func (cmd *Command) SetOptionValue(key string, value string) {
 			opt.value = value
 		}
 	} else {
-		// @todo fallback OptionNotExistsFallback
+		// @todo fallback InvalidOptionFallback
 		panic("Option " + key + " not exist")
 	}
+}
+
+func (opt *CmdOption) SetShortSyntax(short string) {
+	if opt.input != OptionValueNone {
+		panic("Short syntax is for option_value_none")
+	}
+
+	if helper.IsBlank(short) || len(short) > 1 {
+		panic("Invalid command option short syntax")
+	}
+
+	bytes := []byte(short)
+	if match, _ := regexp.Match(`[a-z]`, bytes); !match {
+		panic("Invalid command option short syntax")
+	}
+
+	opt.short = short
+}
+
+func (cmd *Command) ValidateArgumentRequirement() error {
+
+	for _, argument := range cmd.arguments {
+		if argument.input == ArgumentRequired {
+			if helper.IsBlank(argument.value) {
+				// @todo InvalidArgumentFallback
+				panic("Invalid argument [ " + argument.name + " ], not exists")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cmd *Command) ValidateOptionRequirement() error {
+	for _, option := range cmd.options {
+
+		if false == option.Exists() {
+			continue // skip non-exists option
+		}
+
+		if option.input == OptionValueRequire {
+			if helper.IsBlank(option.value) {
+				panic("Invalid option [ " + option.name + " ], require value")
+			}
+		}
+	}
+
+	return nil
 }

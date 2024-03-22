@@ -33,7 +33,6 @@ func main() {
 	version := "v0.1"
 
 	console := cli.Construct(name, description, version)
-	console.PrintBanner()
 	console.AddCommand(cmd)
 
 	// Run console
