@@ -9,12 +9,12 @@ import (
 
 func main() {
 
-	name := "cmd:simple"
+	name := "app:simple"
 	description := "Simple command"
 
 	cmd := command.Construct(name, description)
 	cmd.SetCallback(func() error {
-		cmd.PrintHelp()
+		fmt.Println("Hello world!")
 		return nil
 	})
 

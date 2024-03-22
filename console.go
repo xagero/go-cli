@@ -56,7 +56,7 @@ func (console *Console) PrintHelp() {
 	if len(console.commands) > 0 {
 		fmt.Println("\nCommands:")
 		for _, cmd := range console.commands {
-			fmt.Printf("\t%s - %s\n", cmd.GetName(), cmd.GetDescription())
+			fmt.Printf("\t%s \t- %s\n", cmd.GetName(), cmd.GetDescription())
 		}
 	}
 }
@@ -66,6 +66,7 @@ func (console *Console) Run(context context.Context, args []string) error {
 
 	if len(args) < 2 {
 		if console.defaultCommand == nil {
+			console.PrintBanner()
 			console.PrintHelp()
 		} else {
 			slog.Debug("Default command call")
@@ -78,6 +79,9 @@ func (console *Console) Run(context context.Context, args []string) error {
 			a := args[2:]
 			console.processArguments(a, cmd)
 			console.processOptions(a, cmd)
+
+			cmd.ValidateArgumentRequirement()
+			cmd.ValidateOptionRequirement()
 
 			return cmd.Run(context, args)
 		} else {
@@ -100,24 +104,26 @@ func (console *Console) processArguments(a []string, cmd *command.Command) {
 	}
 }
 
+// processOptions
 func (console *Console) processOptions(a []string, cmd *command.Command) {
 	for _, value := range a {
-		if false == strings.HasPrefix(value, "--") {
-			continue // skip argument
-		}
+		if strings.HasPrefix(value, "--") {
+			if strings.Contains(value, "=") {
+				parts := strings.Split(value, "=")
 
-		if strings.Contains(value, "=") {
-			parts := strings.Split(value, "=")
+				k := strings.TrimPrefix(parts[0], "--")
+				v := strings.TrimPrefix(parts[1], `"`)
 
-			k := strings.TrimPrefix(parts[0], "--")
-			v := strings.TrimPrefix(parts[1], `"`)
+				cmd.SetOptionExists(k, true)
+				cmd.SetOptionValue(k, v)
 
-			cmd.SetOptionExists(k, true)
-			cmd.SetOptionValue(k, v)
-
-		} else {
-			k := strings.TrimPrefix(value, "--")
-			cmd.SetOptionExists(k, true)
+			} else {
+				k := strings.TrimPrefix(value, "--")
+				cmd.SetOptionExists(k, true)
+			}
+		} else if strings.HasPrefix(value, "-") {
+			short := strings.TrimPrefix(value, "-")
+			cmd.SetOptionExistsByShort(short, true)
 		}
 	}
 }

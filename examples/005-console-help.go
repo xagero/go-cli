@@ -12,7 +12,7 @@ import (
 func main() {
 
 	// Command
-	cmd := command.Construct("app:cmd", "Example command")
+	cmd := command.Construct("app:cmd", "Example command, print custom help information")
 	cmd.DisableCommonOptions()
 
 	help := cmd.AddOption("help", command.OptionValueNone, "Show command help")
@@ -24,11 +24,10 @@ func main() {
 	})
 
 	name := "Console"
-	description := "Simple console application"
+	desc := "Simple console application"
 	version := "v0.1"
 
-	console := cli.Construct(name, description, version)
-	console.PrintBanner()
+	console := cli.Construct(name, desc, version)
 	console.AddCommand(cmd)
 
 	if err := console.Run(context.Background(), os.Args); err != nil {

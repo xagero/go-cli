@@ -3,8 +3,10 @@ package command
 import (
 	"context"
 	"fmt"
-	"github.com/xagero/go-helper/helper"
 	"regexp"
+	"strings"
+
+	"github.com/xagero/go-helper/helper"
 )
 
 // Construct return new Command
@@ -70,6 +72,16 @@ func (cmd *Command) DisableCommonOptions() {
 
 // PrintHelp print command help
 func (cmd *Command) PrintHelp() {
+
+	fmt.Println("Description:")
+	fmt.Println(strings.Repeat(" ", 2) + cmd.description)
+
+	fmt.Println("\nUsage:")
+	usage := cmd.name
+	if len(cmd.options) > 0 {
+		usage += " [options]"
+	}
+	fmt.Println(strings.Repeat(" ", 2) + usage)
 
 	if len(cmd.arguments) > 0 {
 		cmd.printHelpArguments()
@@ -210,9 +222,20 @@ func (cmd *Command) SetOptionExists(key string, b bool) {
 	if opt, ok := cmd.options[key]; ok {
 		opt.exists = b
 	} else {
-		// @todo fallback OptionNotExistsFallback
-		panic("Option " + key + " not exist")
+		// @todo fallback InvalidOptionFallback
+		panic("Option [" + key + "] not exist")
 	}
+}
+
+func (cmd *Command) SetOptionExistsByShort(short string, b bool) {
+	for _, option := range cmd.options {
+		if option.short == short {
+			option.exists = b
+			return
+		}
+	}
+
+	panic("Short option [" + short + "] not exist")
 }
 
 // SetOptionValue set option value if option exists in console
@@ -222,7 +245,7 @@ func (cmd *Command) SetOptionValue(key string, value string) {
 			opt.value = value
 		}
 	} else {
-		// @todo fallback OptionNotExistsFallback
+		// @todo fallback InvalidOptionFallback
 		panic("Option " + key + " not exist")
 	}
 }
@@ -242,4 +265,35 @@ func (opt *CmdOption) SetShortSyntax(short string) {
 	}
 
 	opt.short = short
+}
+
+func (cmd *Command) ValidateArgumentRequirement() error {
+
+	for _, argument := range cmd.arguments {
+		if argument.input == ArgumentRequired {
+			if helper.IsBlank(argument.value) {
+				// @todo InvalidArgumentFallback
+				panic("Invalid argument [ " + argument.name + " ], not exists")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (cmd *Command) ValidateOptionRequirement() error {
+	for _, option := range cmd.options {
+
+		if false == option.Exists() {
+			continue // skip non-exists option
+		}
+
+		if option.input == OptionValueRequire {
+			if helper.IsBlank(option.value) {
+				panic("Invalid option [ " + option.name + " ], require value")
+			}
+		}
+	}
+
+	return nil
 }
