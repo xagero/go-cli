@@ -45,6 +45,7 @@ type CmdArgument struct {
 type CmdOption struct {
 	// config
 	name        string
+	short       string
 	input       string
 	description string
 

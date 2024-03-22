@@ -52,9 +52,12 @@ func (console *Console) PrintHelp() {
 
 	fmt.Println("\nUsage:")
 	fmt.Println("\tcommand [arguments] [options]")
-	fmt.Println("\nCommands:")
-	for _, cmd := range console.commands {
-		fmt.Printf("\t%s - %s\n", cmd.GetName(), cmd.GetDescription())
+
+	if len(console.commands) > 0 {
+		fmt.Println("\nCommands:")
+		for _, cmd := range console.commands {
+			fmt.Printf("\t%s - %s\n", cmd.GetName(), cmd.GetDescription())
+		}
 	}
 }
 
@@ -88,10 +91,8 @@ func (console *Console) Run(context context.Context, args []string) error {
 func (console *Console) processArguments(a []string, cmd *command.Command) {
 	idx := -1
 	for _, value := range a {
-
-		// skip option
 		if strings.HasPrefix(value, "-") {
-			continue
+			continue // skip option
 		}
 
 		idx++
@@ -101,24 +102,22 @@ func (console *Console) processArguments(a []string, cmd *command.Command) {
 
 func (console *Console) processOptions(a []string, cmd *command.Command) {
 	for _, value := range a {
-
-		// skip argument
 		if false == strings.HasPrefix(value, "--") {
-			continue
+			continue // skip argument
 		}
 
 		if strings.Contains(value, "=") {
 			parts := strings.Split(value, "=")
 
-			key := strings.TrimPrefix(parts[0], "--")
-			value := strings.TrimPrefix(parts[1], `"`)
+			k := strings.TrimPrefix(parts[0], "--")
+			v := strings.TrimPrefix(parts[1], `"`)
 
-			cmd.SetOptionExists(key, true)
-			cmd.SetOptionValue(key, value)
+			cmd.SetOptionExists(k, true)
+			cmd.SetOptionValue(k, v)
 
 		} else {
-			key := strings.TrimPrefix(value, "--")
-			cmd.SetOptionExists(key, true)
+			k := strings.TrimPrefix(value, "--")
+			cmd.SetOptionExists(k, true)
 		}
 	}
 }

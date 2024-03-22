@@ -3,6 +3,8 @@ package command
 import (
 	"context"
 	"fmt"
+	"github.com/xagero/go-helper/helper"
+	"regexp"
 )
 
 // Construct return new Command
@@ -56,14 +58,70 @@ func (cmd *Command) Run(context context.Context, args []string) error {
 	return nil
 }
 
+// EnableCommonOptions enable common options
+func (cmd *Command) EnableCommonOptions() {
+	// @todo code me
+}
+
+// DisableCommonOptions disable common options
+func (cmd *Command) DisableCommonOptions() {
+	// @todo code me
+}
+
 // PrintHelp print command help
 func (cmd *Command) PrintHelp() {
-	fmt.Println("I am command help")
-	return
+
+	if len(cmd.arguments) > 0 {
+		cmd.printHelpArguments()
+	}
+	if len(cmd.options) > 0 {
+		cmd.printHelpOptions()
+	}
+
+}
+
+func (cmd *Command) printHelpOptions() {
+	fmt.Println("\nOptions:")
+
+	var n, s, d string
+
+	for _, option := range cmd.options {
+
+		n = option.name
+		d = option.description
+		s = option.short
+
+		switch option.Input() {
+		case OptionValueNone:
+			if helper.IsBlank(s) {
+				fmt.Printf("\t--%s \t- %s\n", n, d)
+			} else {
+				fmt.Printf("\t--%s, -%s \t- %s\n", n, s, d)
+			}
+		case OptionValueOptional:
+			fmt.Printf("\t--%s \t- %s\n", n, d)
+		case OptionValueRequire:
+			fmt.Printf("\t--%s \t- %s\n", n, d)
+		}
+	}
+}
+
+func (cmd *Command) printHelpArguments() {
+	fmt.Println("\nArguments:")
+	for _, argument := range cmd.arguments {
+
+		var required string
+		if argument.input == ArgumentRequired {
+			required = "(*required)"
+		} else if argument.input == ArgumentOptional {
+			required = "(optional)"
+		}
+		fmt.Printf("\t%s - %s %s\n", argument.name, argument.description, required)
+	}
 }
 
 // AddArgument add command argument
-func (cmd *Command) AddArgument(name, input, description string) *Command {
+func (cmd *Command) AddArgument(name, input, description string) *CmdArgument {
 
 	arg := new(CmdArgument)
 	arg.name = name
@@ -74,11 +132,11 @@ func (cmd *Command) AddArgument(name, input, description string) *Command {
 
 	cmd.arguments[name] = arg
 
-	return cmd
+	return arg
 }
 
 // AddOption add command option
-func (cmd *Command) AddOption(name, input, description string) *Command {
+func (cmd *Command) AddOption(name, input, description string) *CmdOption {
 	opt := new(CmdOption)
 	opt.name = name
 	opt.input = input
@@ -89,7 +147,7 @@ func (cmd *Command) AddOption(name, input, description string) *Command {
 
 	cmd.options[name] = opt
 
-	return cmd
+	return opt
 }
 
 // GetArgumentValue return argument value
@@ -139,6 +197,10 @@ func (opt CmdOption) Value() string {
 	return opt.value
 }
 
+func (opt CmdOption) Short() string {
+	return opt.short
+}
+
 func (cmd *Command) ListOptions() map[string]*CmdOption {
 	return cmd.options
 }
@@ -163,4 +225,21 @@ func (cmd *Command) SetOptionValue(key string, value string) {
 		// @todo fallback OptionNotExistsFallback
 		panic("Option " + key + " not exist")
 	}
+}
+
+func (opt *CmdOption) SetShortSyntax(short string) {
+	if opt.input != OptionValueNone {
+		panic("Short syntax is for option_value_none")
+	}
+
+	if helper.IsBlank(short) || len(short) > 1 {
+		panic("Invalid command option short syntax")
+	}
+
+	bytes := []byte(short)
+	if match, _ := regexp.Match(`[a-z]`, bytes); !match {
+		panic("Invalid command option short syntax")
+	}
+
+	opt.short = short
 }

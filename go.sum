@@ -1,0 +1,4 @@
+github.com/xagero/go-helper v0.1.2 h1:nL9TIpIEOP/qQiHCr4JhSaAu1hIe4xooV+Hh7Z9uxQg=
+github.com/xagero/go-helper v0.1.2/go.mod h1:MORxwbjjEm2tKFtoc797ZtCtnV5+WPqtlym/x3yFIy4=
+golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81 h1:6R2FC06FonbXQ8pK11/PDFY6N6LWlf9KlzibaCapmqc=
+golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81/go.mod h1:CQ1k9gNrJ50XIzaKCRR2hssIjF07kZFEiieALBM/ARQ=
