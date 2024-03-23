@@ -3,17 +3,43 @@ package command
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/xagero/go-helper/helper"
 )
 
+type Callback func() error
+
+// Command simple command structure
+type Command struct {
+	// config
+	name        string
+	description string
+	config      map[string]string
+
+	// callback fn
+	callback       Callback
+	callbackBefore Callback
+	callbackAfter  Callback
+
+	// cli parameters
+	arguments map[string]*CmdArgument
+	options   map[string]*CmdOption
+}
+
 // Construct return new Command
-func Construct(name, description string) *Command {
+func Construct(name, desc string) *Command {
+
+	// Create new command
 	cmd := new(Command)
 	cmd.name = name
-	cmd.description = description
+	cmd.description = desc
+
+	// Configure
+	cmd.config = make(map[string]string)
+	cmd.config["common_options"] = "Y"
+
+	// Make arguments and options
 	cmd.arguments = make(map[string]*CmdArgument)
 	cmd.options = make(map[string]*CmdOption)
 
@@ -41,14 +67,25 @@ func (cmd *Command) SetCallback(callback Callback) *Command {
 	return cmd
 }
 
-func (cmd *Command) SetCallbackBefore(before Callback) *Command {
-	cmd.callbackBefore = before
+// SetCallbackBefore set before callback function
+func (cmd *Command) SetCallbackBefore(callback Callback) *Command {
+	cmd.callbackBefore = callback
 	return cmd
 }
 
-func (cmd *Command) SetCallbackAfter(after Callback) *Command {
-	cmd.callbackAfter = after
+// SetCallbackAfter set after callback function
+func (cmd *Command) SetCallbackAfter(callback Callback) *Command {
+	cmd.callbackAfter = callback
 	return cmd
+}
+
+// RunBefore execute before callback function
+func (cmd *Command) RunBefore(context context.Context) error {
+	if cmd.callbackBefore != nil {
+		return cmd.callbackBefore()
+	}
+
+	return nil
 }
 
 // Run execute callback function
@@ -60,14 +97,23 @@ func (cmd *Command) Run(context context.Context, args []string) error {
 	return nil
 }
 
+// RunAfter execute after callback function
+func (cmd *Command) RunAfter(context context.Context) error {
+	if cmd.callbackAfter != nil {
+		return cmd.callbackAfter()
+	}
+
+	return nil
+}
+
 // EnableCommonOptions enable common options
 func (cmd *Command) EnableCommonOptions() {
-	// @todo code me
+	cmd.config["common_options"] = "Y"
 }
 
 // DisableCommonOptions disable common options
 func (cmd *Command) DisableCommonOptions() {
-	// @todo code me
+	cmd.config["common_options"] = "N"
 }
 
 // PrintHelp print command help
@@ -132,21 +178,6 @@ func (cmd *Command) printHelpArguments() {
 	}
 }
 
-// AddArgument add command argument
-func (cmd *Command) AddArgument(name, input, description string) *CmdArgument {
-
-	arg := new(CmdArgument)
-	arg.name = name
-	arg.value = "" // An empty string
-	arg.position = len(cmd.arguments)
-	arg.input = input
-	arg.description = description
-
-	cmd.arguments[name] = arg
-
-	return arg
-}
-
 // AddOption add command option
 func (cmd *Command) AddOption(name, input, description string) *CmdOption {
 	opt := new(CmdOption)
@@ -160,140 +191,4 @@ func (cmd *Command) AddOption(name, input, description string) *CmdOption {
 	cmd.options[name] = opt
 
 	return opt
-}
-
-// GetArgumentValue return argument value
-func (cmd *Command) GetArgumentValue(name string) string {
-	return cmd.arguments[name].value
-}
-
-// SetArgumentValue set argument value
-func (cmd *Command) SetArgumentValue(position int, value string) *Command {
-	for _, item := range cmd.arguments {
-		if position == item.position {
-			item.value = value
-		}
-	}
-
-	return cmd
-}
-
-// GetOption return CmdOption
-func (cmd *Command) GetOption(key string) *CmdOption {
-	if opt, ok := cmd.options[key]; ok {
-		return opt
-	}
-	return nil
-}
-
-// Name return CmdOption name
-func (opt CmdOption) Name() string {
-	return opt.name
-}
-
-func (opt CmdOption) Input() string {
-	return opt.input
-}
-
-func (opt CmdOption) Description() string {
-	return opt.description
-}
-
-// Exists return CmdOption exists
-func (opt CmdOption) Exists() bool {
-	return opt.exists
-}
-
-// Value return CmdOption value
-func (opt CmdOption) Value() string {
-	return opt.value
-}
-
-func (opt CmdOption) Short() string {
-	return opt.short
-}
-
-func (cmd *Command) ListOptions() map[string]*CmdOption {
-	return cmd.options
-}
-
-// SetOptionExists set if option exists in console
-func (cmd *Command) SetOptionExists(key string, b bool) {
-	if opt, ok := cmd.options[key]; ok {
-		opt.exists = b
-	} else {
-		// @todo fallback InvalidOptionFallback
-		panic("Option [" + key + "] not exist")
-	}
-}
-
-func (cmd *Command) SetOptionExistsByShort(short string, b bool) {
-	for _, option := range cmd.options {
-		if option.short == short {
-			option.exists = b
-			return
-		}
-	}
-
-	panic("Short option [" + short + "] not exist")
-}
-
-// SetOptionValue set option value if option exists in console
-func (cmd *Command) SetOptionValue(key string, value string) {
-	if opt, ok := cmd.options[key]; ok {
-		if opt.exists {
-			opt.value = value
-		}
-	} else {
-		// @todo fallback InvalidOptionFallback
-		panic("Option " + key + " not exist")
-	}
-}
-
-func (opt *CmdOption) SetShortSyntax(short string) {
-	if opt.input != OptionValueNone {
-		panic("Short syntax is for option_value_none")
-	}
-
-	if helper.IsBlank(short) || len(short) > 1 {
-		panic("Invalid command option short syntax")
-	}
-
-	bytes := []byte(short)
-	if match, _ := regexp.Match(`[a-z]`, bytes); !match {
-		panic("Invalid command option short syntax")
-	}
-
-	opt.short = short
-}
-
-func (cmd *Command) ValidateArgumentRequirement() error {
-
-	for _, argument := range cmd.arguments {
-		if argument.input == ArgumentRequired {
-			if helper.IsBlank(argument.value) {
-				// @todo InvalidArgumentFallback
-				panic("Invalid argument [ " + argument.name + " ], not exists")
-			}
-		}
-	}
-
-	return nil
-}
-
-func (cmd *Command) ValidateOptionRequirement() error {
-	for _, option := range cmd.options {
-
-		if false == option.Exists() {
-			continue // skip non-exists option
-		}
-
-		if option.input == OptionValueRequire {
-			if helper.IsBlank(option.value) {
-				panic("Invalid option [ " + option.name + " ], require value")
-			}
-		}
-	}
-
-	return nil
 }

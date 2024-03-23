@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -10,28 +9,40 @@ import (
 )
 
 type Console struct {
-	name           string
-	description    string
-	version        string
+
+	// Config
+	name        string
+	description string
+	version     string
+
+	// Commands
 	defaultCommand *command.Command
 	commands       map[string]*command.Command
 }
 
 // Construct return new Console
-func Construct(name string, description string, version string) *Console {
+func Construct(name, desc, version string) *Console {
 
+	// Create new console
 	console := new(Console)
 	console.name = name
-	console.description = description
+	console.description = desc
 	console.version = version
+
+	// Make commands
 	console.commands = make(map[string]*command.Command)
 
 	return console
 }
 
+// NewConsole (alias for Construct) return new Console
+func NewConsole(name, desc, version string) *Console {
+	return Construct(name, desc, version)
+}
+
 // SetDefaultCommand set command by default, return Console
-func (console *Console) SetDefaultCommand(command *command.Command) *Console {
-	console.defaultCommand = command
+func (console *Console) SetDefaultCommand(cmd *command.Command) *Console {
+	console.defaultCommand = cmd
 	return console
 }
 
@@ -42,27 +53,10 @@ func (console *Console) AddCommand(cmd *command.Command) *Console {
 	return console
 }
 
-// PrintBanner print banner information
-func (console *Console) PrintBanner() {
-	fmt.Printf("%s %s - %s\n", console.name, console.version, console.description)
-}
-
-// PrintHelp print help command
-func (console *Console) PrintHelp() {
-
-	fmt.Println("\nUsage:")
-	fmt.Println("\tcommand [arguments] [options]")
-
-	if len(console.commands) > 0 {
-		fmt.Println("\nCommands:")
-		for _, cmd := range console.commands {
-			fmt.Printf("\t%s \t- %s\n", cmd.GetName(), cmd.GetDescription())
-		}
-	}
-}
-
 // Run execute console command
 func (console *Console) Run(context context.Context, args []string) error {
+
+	console.applyBuiltinFeatures()
 
 	if len(args) < 2 {
 		if console.defaultCommand == nil {
@@ -85,7 +79,8 @@ func (console *Console) Run(context context.Context, args []string) error {
 
 			return cmd.Run(context, args)
 		} else {
-
+			console.PrintBanner()
+			console.PrintHelp()
 		}
 	}
 
@@ -114,16 +109,20 @@ func (console *Console) processOptions(a []string, cmd *command.Command) {
 				k := strings.TrimPrefix(parts[0], "--")
 				v := strings.TrimPrefix(parts[1], `"`)
 
-				cmd.SetOptionExists(k, true)
+				cmd.SetOptionExist(k, true)
 				cmd.SetOptionValue(k, v)
 
 			} else {
 				k := strings.TrimPrefix(value, "--")
-				cmd.SetOptionExists(k, true)
+				cmd.SetOptionExist(k, true)
 			}
 		} else if strings.HasPrefix(value, "-") {
 			short := strings.TrimPrefix(value, "-")
-			cmd.SetOptionExistsByShort(short, true)
+			cmd.SetOptionExistByShort(short, true)
 		}
 	}
+}
+
+func (console *Console) applyBuiltinFeatures() {
+	// @todo builtin features - help, quiet and verbose
 }
