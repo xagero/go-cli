@@ -1,5 +1,7 @@
 # go-cli
 
+Project still in development,  do not use in production!
+
 ## Requirements
 
 [Go](http://golang.org) 1.22 or newer.
@@ -46,9 +48,6 @@ if err := console.Run(context.Background(), os.Args); err != nil {
 
 
 ## Todo
-
-Project still in development
-
 - [ ] Improve help and group command
 - [ ] Console builtin options
 - [ ] Improve option requirements
