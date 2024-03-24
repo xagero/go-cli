@@ -136,10 +136,13 @@ func (table *table) printRow(format string, row []string) {
 func (table *table) applyWidth(row []string, widths []int) []interface{} {
 	out := make([]interface{}, len(row))
 	for i, s := range row {
-		if table.column[i].textAlign == TextAlignLeft {
+
+		switch table.column[i].textAlign {
+		case TextAlignLeft:
 			out[i] = s + table.length(s, widths[i])
-		} else if table.column[i].textAlign == TextAlignRight {
+		case TextAlignRight:
 			out[i] = table.length(s, widths[i]) + s
+
 		}
 	}
 	return out

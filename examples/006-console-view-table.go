@@ -16,10 +16,11 @@ func main() {
 	cmd.DisableCommonOptions()
 	cmd.SetCallback(func() error {
 
-		tbl := view.Construct("id", "name", "description")
+		tbl := view.Construct("id", "name", "description", "empty")
 		tbl.SetHeading("Simple table view")
 		tbl.AddRow(1, "Hello", "Some description at first row")
 		tbl.AddRow(2, "World", "Some description at second row")
+		tbl.AddRow(3, "!!!", "Some description at third row")
 		tbl.Render()
 
 		return nil
