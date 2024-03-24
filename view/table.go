@@ -8,6 +8,17 @@ import (
 	"github.com/xagero/go-helper/helper"
 )
 
+const (
+	TextAlignLeft  = "text_align_left"
+	TextAlignRight = "text_align_right"
+)
+
+type columnConfig struct {
+	title     string // @todo title in header
+	padding   int    // @todo column padding
+	textAlign string
+}
+
 type Table interface {
 	SetHeading(heading string) Table
 	AddRow(values ...interface{}) Table
@@ -18,6 +29,7 @@ type table struct {
 
 	// Config
 	padding int
+	column  map[int]*columnConfig
 
 	// Data
 	heading string
@@ -37,10 +49,18 @@ func Construct(headers ...interface{}) Table {
 	table.heading = ""
 	table.padding = 4
 	table.header = make([]string, len(headers))
+	table.column = make(map[int]*columnConfig)
 
 	// Setup header column
 	for i, col := range headers {
+		// @todo remove me
 		table.header[i] = fmt.Sprint(col)
+
+		cc := new(columnConfig)
+		cc.title = fmt.Sprint(col)
+		cc.textAlign = TextAlignRight
+
+		table.column[i] = cc
 	}
 
 	return table
@@ -116,7 +136,11 @@ func (table *table) printRow(format string, row []string) {
 func (table *table) applyWidth(row []string, widths []int) []interface{} {
 	out := make([]interface{}, len(row))
 	for i, s := range row {
-		out[i] = s + table.length(s, widths[i]) // @todo text align
+		if table.column[i].textAlign == TextAlignLeft {
+			out[i] = s + table.length(s, widths[i])
+		} else if table.column[i].textAlign == TextAlignRight {
+			out[i] = table.length(s, widths[i]) + s
+		}
 	}
 	return out
 }
